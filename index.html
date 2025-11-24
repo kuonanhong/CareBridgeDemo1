@@ -1,0 +1,1750 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CareBridge 歐亞南投莊園 - 旗艦養生 Web Demo (V5.1 Updated)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+
+    <style>
+        @import url("https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Playfair+Display:wght@700&display=swap");
+        body {
+            font-family: "Noto Sans TC", sans-serif;
+        }
+        .font-serif {
+            font-family: "Playfair Display", serif;
+        }
+        .bg-manor {
+            background-color: #f4f8fc;
+        }
+        .text-brand-blue {
+            color: #0060a0;
+        }
+        .bg-brand-blue {
+            background-color: #0060a0;
+        }
+        .text-brand-green {
+            color: #00a082;
+        }
+        .bg-brand-green {
+            background-color: #00a082;
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 手機模擬器樣式 */
+        .phone-mockup {
+            border: 12px solid #333;
+            border-radius: 30px;
+            overflow: hidden;
+            position: relative;
+            height: 600px;
+            width: 320px;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+        .phone-notch {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 20px;
+            background: #333;
+            border-bottom-left-radius: 12px;
+            border-bottom-right-radius: 12px;
+            z-index: 10;
+        }
+
+        /* 影片容器 - 優化版 */
+        .video-wrapper {
+            position: relative;
+            padding-bottom: 56.25%; /* 16:9 */
+            height: 0;
+            overflow: hidden;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            background-color: #000;
+            cursor: pointer;
+        }
+        .video-wrapper iframe, .video-wrapper img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .play-button {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 68px;
+            height: 48px;
+            background-color: rgba(33, 33, 33, 0.8);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            z-index: 10;
+        }
+        .video-wrapper:hover .play-button {
+            background-color: #f00;
+        }
+        .play-icon {
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 10px 0 10px 18px;
+            border-color: transparent transparent transparent white;
+        }
+
+        /* Modal 動畫 */
+        .modal-enter {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+        .modal-enter-active {
+            opacity: 1;
+            transform: scale(1);
+            transition: opacity 300ms, transform 300ms;
+        }
+        .map-container iframe {
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
+        
+        /* 隱藏滾動條但保持功能 */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #ccc; 
+            border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #aaa; 
+        }
+    </style>
+</head>
+<body class="bg-manor text-gray-800">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- 資料集 ---
+        const activities = [
+            {
+                id: 1,
+                title: "週日心靈禮拜",
+                time: "週日 09:00",
+                loc: "空中花園教會",
+                icon: "fa-church",
+                type: "心靈",
+                desc: "邀請知名牧師講道，於藍天白雲下的空中花園，洗滌心靈。",
+                detail: "每週日早晨，我們邀請不同教派的牧師或心靈導師，在視野開闊的空中花園帶領大家進行靜心與祈禱。結束後備有簡單茶點與交誼時間，是建立鄰里關係的最佳時刻。"
+            },
+            {
+                id: 2,
+                title: "旗袍走秀大賽",
+                time: "週六 14:00",
+                loc: "宴會大廳",
+                icon: "fa-user-tie",
+                type: "娛樂",
+                desc: "展現銀髮自信風采，穿上最愛的旗袍，您就是舞台的主角。",
+                detail: "不論年齡，優雅是永不褪色的時尚。我們聘請專業彩妝師與攝影師，為長者打造專屬的走秀舞台。歡迎攜帶您珍藏的旗袍或西裝參加，冠軍將獲得「莊園風采大使」殊榮！"
+            },
+            {
+                id: 3,
+                title: "肌力防跌課程",
+                time: "週一 10:00",
+                loc: "健身中心",
+                icon: "fa-dumbbell",
+                type: "健康",
+                desc: "北醫認證教練指導，強化核心與下肢肌力，預防跌倒風險。",
+                detail: "針對銀髮族設計的循環訓練課程，重點在於強化大腿股四頭肌與核心肌群。課程包含暖身、彈力帶訓練與平衡感練習，全程有物理治療師在旁協助，確保安全有效。"
+            },
+            {
+                id: 4,
+                title: "鳥嘴潭健走",
+                time: "週三 07:00",
+                loc: "戶外",
+                icon: "fa-person-hiking",
+                type: "戶外",
+                desc: "漫步於鳥嘴潭人工湖畔，享受芬多精與湖光山色，是最療癒的晨間儀式。",
+                detail: "專車接送至鳥嘴潭人工湖，沿著平緩的環湖步道健走約 3 公里。沿途可欣賞九九峰倒影與豐富的水鳥生態。運動後我們將在湖畔涼亭享用健康早餐。"
+            },
+            {
+                id: 5,
+                title: "KTV 歡唱之夜",
+                time: "週五 19:00",
+                loc: "KTV 包廂",
+                icon: "fa-microphone-lines",
+                type: "社交",
+                desc: "頂級音響設備，與三五好友高歌一曲，釋放壓力不怕吵到鄰居。",
+                detail: "週五晚間是大家的放鬆時刻！我們的 KTV 包廂配備頂級音響與最新歌單。您可以組隊參加歌唱接龍，或是單純享受聽歌的樂趣。現場提供無酒精雞尾酒與低卡零食。"
+            },
+        ];
+
+        const scenicSpots = [
+            {
+                name: "鳥嘴潭人工湖",
+                tag: "全台最大人工湖",
+                img: "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=800&q=80",
+                desc: "擁有絕美湖光山色與平緩環湖步道，適合長者健走與日光浴，是南投最療癒的散步路線。",
+                mapQuery: "鳥嘴潭人工湖"
+            },
+            {
+                name: "九九峰步道",
+                tag: "自然奇景",
+                img: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80",
+                desc: "獨特地形與遼闊視野，輕裝即可完成的觀景路線，適合情侶與親子一同爬山健身。",
+                mapQuery: "九九峰森林步道"
+            },
+            {
+                name: "毓繡美術館",
+                tag: "藝術殿堂",
+                img: "https://images.unsplash.com/photo-1541963463532-d68292c34b19?auto=format&fit=crop&w=800&q=80",
+                desc: "山林中的美術館，建築與自然完美融合，適合午後來一場安靜的藝文小旅行。",
+                mapQuery: "毓繡美術館"
+            },
+            {
+                name: "古堡花園",
+                tag: "歐式莊園",
+                img: "https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?auto=format&fit=crop&w=800&q=80",
+                desc: "歐式古堡搭配繽紛花園，彷彿一秒飛到南法，最適合舉辦婚禮、旗袍走秀與攝影創作。",
+                mapQuery: "歐莉葉荷城堡" 
+            },
+            {
+                name: "又見一炊煙",
+                tag: "禪意景觀",
+                img: "https://images.unsplash.com/photo-1522383225653-ed111181a951?auto=format&fit=crop&w=800&q=80",
+                desc: "日式禪風建築搭配無菜單料理，在山霧裡用一頓慢食，重新整理身心。",
+                mapQuery: "又見一炊煙"
+            },
+            {
+                name: "草屯工藝中心",
+                tag: "文化體驗",
+                img: "https://images.unsplash.com/photo-1515488764276-beab7607c1e6?auto=format&fit=crop&w=800&q=80",
+                desc: "國家級的工藝研究所，提供藍染、竹編等手作體驗，非常適合祖孫同樂的文化行程。",
+                mapQuery: "國立臺灣工藝研究發展中心"
+            },
+            {
+                name: "中興新村",
+                tag: "眷村花園",
+                img: "https://images.unsplash.com/photo-1576485290814-1c72aa4bbb8e?auto=format&fit=crop&w=800&q=80",
+                desc: "充滿歷史感的綠色隧道與眷村建築，騎著單車穿梭其中，品嚐酸梅湯與牛肉麵。",
+                mapQuery: "中興新村"
+            },
+            {
+                name: "寶島時代村",
+                tag: "懷舊時光",
+                img: "https://images.unsplash.com/photo-1552550186-0b190c1fcece?auto=format&fit=crop&w=800&q=80", 
+                desc: "全亞洲最大室內懷舊主題村，重現台灣百年生活光景，帶長輩重溫兒時記憶。",
+                mapQuery: "寶島時代村"
+            },
+            {
+                name: "草屯草鞋墩夜市",
+                tag: "在地美食",
+                img: "https://images.unsplash.com/photo-1555126634-323283e090fa?auto=format&fit=crop&w=800&q=80",
+                desc: "南投超人氣夜市，各式在地小吃應有盡有，感受台灣最熱情的夜晚文化。",
+                mapQuery: "草鞋墩人文觀光夜市"
+            },
+             {
+                name: "南投酒廠",
+                tag: "微醺之旅",
+                img: "https://images.unsplash.com/photo-1516594915697-87eb3b1c14ea?auto=format&fit=crop&w=800&q=80",
+                desc: "以水果酒聞名，參觀酒窖與品酒體驗，園區內還有巨型酒桶造景可供拍照。",
+                mapQuery: "南投酒廠"
+            }
+        ];
+
+        // 預防醫學詳細資料
+        const healthDetails = {
+            "01": {
+                title: "精準營養學",
+                content: "我們的營養團隊會根據每位長者的健檢報告（如血糖、血壓、腎功能指數）設計個人化菜單。與在地有機農場合作，提供當季最新鮮的食材。每季進行一次營養評估，動態調整飲食計畫，讓食物成為最好的醫藥。",
+                img: "https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&w=800&q=80"
+            },
+            "02": {
+                title: "肌力運動與防跌",
+                content: "肌少症是長者跌倒的主因。我們引進北醫體系開發的防跌運動模組，包含每週兩次的團體肌力課與每日晨間伸展。健身中心配備氣壓式阻力訓練機，能保護關節同時強化肌肉，並由物理治療師定期檢測步態與平衡能力。",
+                img: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&w=800&q=80"
+            },
+            "03": {
+                title: "身心愉悅與靈性支持",
+                content: "心理健康直接影響生理健康。莊園設有專屬的心靈關懷室，提供一對一心理諮商。每週舉辦藝術治療、園藝輔療與音樂分享會。對於有宗教信仰的長者，我們提供空中花園教會與靜思空間，滿足心靈寄託。",
+                img: "https://images.unsplash.com/photo-1544367563-12123d8965cd?auto=format&fit=crop&w=800&q=80"
+            },
+            "04": {
+                title: "定期檢查與早期發現",
+                content: "與佑民醫院及亞洲大學附屬醫院簽署合作備忘錄。住戶享有每年一次高階健康檢查，以及每季一次的慢病追蹤服務。若發現異常，透過綠色通道直接轉介專科醫師，省去排隊掛號的漫長等待。",
+                img: "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=800&q=80"
+            },
+            "05": {
+                title: "陽光、空氣、水的環境療癒",
+                content: "南投擁有全台最優質的自然環境。我們設計了「四季療癒地圖」，春天賞花、夏天避暑、秋天健走、冬天溫泉。鼓勵長者走出戶外，接受適量日照合成維生素 D，呼吸富含芬多精的空氣，自然提升免疫力。",
+                img: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=800&q=80"
+            },
+            "06": {
+                title: "正常社交與角色感",
+                content: "孤獨是健康殺手。我們推動「志工銀行」與「達人學院」，鼓勵長者擔任莊園內的圖書管理員、園藝志工或才藝老師。透過貢獻所長，找回自我價值感，並在互動中建立深厚的鄰里情誼。",
+                img: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=800&q=80"
+            },
+            "07": {
+                title: "AI 科技與資料驅動照護",
+                content: "每間客房配備毫米波雷達，非接觸式監測睡眠品質與呼吸心跳。CaaS App 整合所有健康數據，AI 系統會自動分析趨勢，若發現異常（如夜間頻繁離床、心率變異），將主動發送預警給護理站與家屬。",
+                img: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=800&q=80"
+            }
+        };
+
+        const videoData = [
+            { id: 1, title: "經營概念與願景", youtubeId: "Qzgril6ZAD4" },
+            { id: 2, title: "大廳活動與氛圍", youtubeId: "X3Ef8t8bdlU" },
+            { id: 3, title: "一日預防醫學生活", youtubeId: "WRC-ADJ0-4Q" },
+            { id: 4, title: "區位與活動設計", youtubeId: "RZpjRbtc0xE" },
+            // 新增影片
+            { id: 5, title: "南投歐亞養生村寶旺來酒店交誼聽", youtubeId: "1Xmhokv8jwA" },
+            { id: 6, title: "南投歐亞養生村(寶旺來酒店)交誼聽二", youtubeId: "BK10JH_1lEM" },
+        ];
+
+        // 寶旺來莊園設施圖片 (Figures 資料夾)
+        const facilityImages = [
+            { src: "Figures/baowanglai_lobby2.jpg", alt: "迎賓大廳" },
+            { src: "Figures/baowanglai_room.jpg", alt: "法式客房" },
+            { src: "Figures/baowanglai_dinning.jpg", alt: "樂活餐廳" },
+            { src: "Figures/baowanglai_lobby3.jpg", alt: "大廳休憩區" },
+            { src: "Figures/baowanglai_lobby4.jpg", alt: "人文空間" },
+            { src: "Figures/baowanglai_saloon1.jpg", alt: "交誼沙龍" },
+            { src: "Figures/baowanglai_saloon2.jpg", alt: "貴賓接待" },
+            { src: "Figures/baowanglai_dinning2.jpg", alt: "宴會餐飲" },
+            { src: "Figures/baowanglai_dinnin3.jpg", alt: "精緻美食" },
+            { src: "Figures/baowanglai_dinning4.jpg", alt: "聚會空間" },
+            { src: "Figures/baowanglai_saloon4.jpg", alt: "休閒沙龍" },
+            { src: "Figures/baowanglai_dinning5.jpg", alt: "景觀餐廳" }
+        ];
+
+        // --- 優化版影片播放器元件 ---
+        function VideoPlayer({ youtubeId, title }) {
+            const [isPlaying, setIsPlaying] = useState(false);
+
+            if (isPlaying) {
+                return (
+                    <div className="video-wrapper">
+                        <iframe
+                            src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1`}
+                            title={title}
+                            frameBorder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                        ></iframe>
+                    </div>
+                );
+            }
+
+            return (
+                <div 
+                    className="video-wrapper group" 
+                    onClick={() => setIsPlaying(true)}
+                    title="點擊播放"
+                >
+                    <img 
+                        src={`https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg`} 
+                        alt={title}
+                        onError={(e) => { e.target.src = `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg` }}
+                    />
+                    <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition"></div>
+                    <div className="play-button">
+                        <div className="play-icon"></div>
+                    </div>
+                    <div className="absolute bottom-4 left-4 text-white font-bold drop-shadow-md">
+                        {title}
+                    </div>
+                </div>
+            );
+        }
+
+        // --- 主應用元件 ---
+        function App() {
+            const [activeTab, setActiveTab] = useState("home");
+            const [showAppModal, setShowAppModal] = useState(false);
+            const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+            return (
+                <div className="min-h-screen flex flex-col relative">
+                    {/* Navbar */}
+                    <nav className="bg-white shadow-md fixed w-full z-40 transition-all duration-300">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div className="flex justify-between h-16">
+                                <div
+                                    className="flex items-center cursor-pointer"
+                                    onClick={() => setActiveTab("home")}
+                                >
+                                    <i className="fa-solid fa-bridge-water text-brand-green text-2xl mr-2"></i>
+                                    <div>
+                                        <h1 className="text-xl font-bold text-brand-blue font-serif">CareBridge</h1>
+                                        <p className="text-xs text-gray-500">歐亞南投莊園 · Re-define Aging</p>
+                                    </div>
+                                </div>
+
+                                {/* Desktop Menu */}
+                                <div className="hidden md:flex items-center space-x-6 lg:space-x-8">
+                                    <NavButton id="home" label="首頁" activeTab={activeTab} setActiveTab={setActiveTab} />
+                                    <NavButton id="vision" label="綠色願景" activeTab={activeTab} setActiveTab={setActiveTab} />
+                                    <NavButton id="health" label="預防醫學" activeTab={activeTab} setActiveTab={setActiveTab} />
+                                    <NavButton id="activities" label="莊園生活" activeTab={activeTab} setActiveTab={setActiveTab} />
+                                    <NavButton id="scenery" label="周邊景點" activeTab={activeTab} setActiveTab={setActiveTab} />
+                                    <NavButton id="videos" label="影音導覽" activeTab={activeTab} setActiveTab={setActiveTab} />
+                                    <NavButton id="caas" label="CaaS 科技賦能" activeTab={activeTab} setActiveTab={setActiveTab} />
+                                    <button
+                                        onClick={() => setShowAppModal(true)}
+                                        className="bg-brand-green text-white px-4 py-2 rounded-full hover:bg-teal-600 transition transform hover:scale-105 shadow-md text-sm"
+                                    >
+                                        <i className="fa-solid fa-mobile-screen mr-2"></i>
+                                        CaaS App 體驗
+                                    </button>
+                                </div>
+
+                                {/* Mobile Menu Button */}
+                                <div className="md:hidden flex items-center">
+                                    <button
+                                        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                                        className="text-gray-600 hover:text-brand-blue p-2 focus:outline-none"
+                                    >
+                                        <i
+                                            className={`fa-solid ${
+                                                mobileMenuOpen ? "fa-times" : "fa-bars"
+                                            } text-2xl transition-all`}
+                                        ></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Mobile Menu Dropdown */}
+                        {mobileMenuOpen && (
+                            <div className="md:hidden bg-white border-t border-gray-100 absolute w-full shadow-xl animate-fade-in z-40">
+                                <div className="px-2 pt-2 pb-3 space-y-1">
+                                    <MobileNavButton id="home" label="首頁" activeTab={activeTab} setActiveTab={setActiveTab} setOpen={setMobileMenuOpen} />
+                                    <MobileNavButton id="vision" label="綠色願景" activeTab={activeTab} setActiveTab={setActiveTab} setOpen={setMobileMenuOpen} />
+                                    <MobileNavButton id="health" label="預防醫學" activeTab={activeTab} setActiveTab={setActiveTab} setOpen={setMobileMenuOpen} />
+                                    <MobileNavButton id="activities" label="莊園生活" activeTab={activeTab} setActiveTab={setActiveTab} setOpen={setMobileMenuOpen} />
+                                    <MobileNavButton id="scenery" label="周邊景點" activeTab={activeTab} setActiveTab={setActiveTab} setOpen={setMobileMenuOpen} />
+                                    <MobileNavButton id="videos" label="影音導覽" activeTab={activeTab} setActiveTab={setActiveTab} setOpen={setMobileMenuOpen} />
+                                    <MobileNavButton id="caas" label="CaaS 科技賦能" activeTab={activeTab} setActiveTab={setActiveTab} setOpen={setMobileMenuOpen} />
+                                    <button
+                                        onClick={() => {
+                                            setShowAppModal(true);
+                                            setMobileMenuOpen(false);
+                                        }}
+                                        className="w-full text-left px-3 py-2 text-brand-green font-bold bg-green-50 rounded-md mt-2"
+                                    >
+                                        <i className="fa-solid fa-mobile-screen mr-2"></i>
+                                        開啟 CaaS App
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </nav>
+
+                    {/* Content Area */}
+                    <main className="flex-grow pt-16">
+                        {activeTab === "home" && (
+                            <HomeSection onBook={() => setShowAppModal(true)} setActiveTab={setActiveTab} />
+                        )}
+                        {activeTab === "vision" && <VisionSection />}
+                        {activeTab === "health" && <HealthSection />}        
+                        {activeTab === "activities" && <ActivitySection />} 
+                        {activeTab === "scenery" && <ScenerySection />}      
+                        {activeTab === "videos" && <VideoSection />}        
+                        {activeTab === "caas" && <CaaSSection onBook={() => setShowAppModal(true)} />}    
+                    </main>
+
+                    {/* Footer */}
+                    <footer className="bg-gray-800 text-white py-10 mt-12">
+                        <div className="max-w-7xl mx-auto px-4 text-center">
+                            <div className="mb-6">
+                                <i className="fa-solid fa-bridge-water text-4xl text-brand-green mb-2"></i>
+                                <h2 className="text-2xl font-serif font-bold">CareBridge 歐亞南投莊園</h2>
+                                <p className="text-gray-400">輕資產營運夥伴計畫 (OpCo / PropCo)</p>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm text-gray-300 mb-8">
+                                <div>
+                                    <h3 className="text-white font-bold mb-2">聯絡資訊</h3>
+                                    <p>南投縣草屯鎮中正路 1751 號</p>
+                                    <p>(寶旺萊 6 號花園酒店)</p>
+                                    <p>Tel: +886-939-943-309</p>
+                                </div>
+                                <div>
+                                    <h3 className="text-white font-bold mb-2">核心服務</h3>
+                                    <p>法式養生莊園 & 頂級客房</p>
+                                    <p>看護快線 CaaS 平台</p>
+                                    <p>預防醫學整合中心</p>
+                                </div>
+                                <div>
+                                    <h3 className="text-white font-bold mb-2">關注我們</h3>
+                                    <div className="flex justify-center space-x-4 mt-2">
+                                        <SocialIcon icon="fa-facebook" />
+                                        <SocialIcon icon="fa-line" />
+                                        <SocialIcon icon="fa-instagram" />
+                                        <SocialIcon icon="fa-youtube" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="border-t border-gray-700 pt-6 text-xs text-gray-500">
+                                <p>&copy; 2025 CareBridge. All rights reserved. Designed by Anna Ou Team.</p>
+                            </div>
+                        </div>
+                    </footer>
+
+                    {/* CaaS App Simulation Modal */}
+                    {showAppModal && (
+                        <div className="fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+                            <div className="relative transform scale-90 md:scale-100 transition-all">
+                                <button
+                                    onClick={() => setShowAppModal(false)}
+                                    className="absolute -right-6 -top-6 text-white text-3xl hover:text-brand-green transition"
+                                >
+                                    <i className="fa-solid fa-circle-xmark"></i>
+                                </button>
+                                <PhoneAppSimulation onClose={() => setShowAppModal(false)} />
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        // --- 子元件 ---
+        function NavButton({ id, label, activeTab, setActiveTab }) {
+            return (
+                <button
+                    onClick={() => setActiveTab(id)}
+                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                        activeTab === id
+                            ? "text-brand-blue font-bold bg-blue-50"
+                            : "text-gray-600 hover:text-brand-blue hover:bg-gray-50"
+                    }`}
+                >
+                    {label}
+                </button>
+            );
+        }
+
+        function MobileNavButton({ id, label, activeTab, setActiveTab, setOpen }) {
+            return (
+                <button
+                    onClick={() => {
+                        setActiveTab(id);
+                        setOpen(false);
+                    }}
+                    className={`block w-full text-left px-3 py-2 rounded-md text-base font-medium ${
+                        activeTab === id
+                            ? "text-brand-blue bg-blue-50 font-bold"
+                            : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                    }`}
+                >
+                    {label}
+                </button>
+            );
+        }
+
+        function SocialIcon({ icon }) {
+            return (
+                <a
+                    href="#"
+                    className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center hover:bg-brand-green transition"
+                >
+                    <i className={`fa-brands ${icon}`}></i>
+                </a>
+            );
+        }
+
+        // --- 首頁 Section ---
+        function HomeSection({ onBook, setActiveTab }) {
+            const [selectedFeature, setSelectedFeature] = useState("facilities");
+
+            return (
+                <div className="animate-fade-in">
+                    {/* Hero Banner */}
+                    <div
+                        className="relative h-[600px] bg-cover bg-center flex items-center justify-center"
+                        style={{
+                            backgroundImage:
+                                'url("https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1600&q=80")',
+                        }}
+                    >
+                        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/40 to-brand-blue/60"></div>
+                        <div className="relative z-10 text-center text-white px-4 max-w-4xl">
+                            <span className="inline-block py-1 px-3 rounded-full bg-brand-green/80 backdrop-blur-md text-sm mb-4 tracking-wider">
+                                南投草屯 · 陽光、空氣、水不亞於夏威夷
+                            </span>
+                            <h2 className="text-4xl md:text-6xl font-serif font-bold mb-6 leading-tight">
+                                台灣的夏威夷，<br className="hidden md:block" />
+                                您的第二人生法式莊園
+                            </h2>
+                            <p className="text-lg md:text-2xl mb-8 font-light">
+                                活化寶旺萊 6 號花園酒店，結合法式莊園美學、預防醫學與 CaaS 科技照護，
+                                <br className="hidden md:block" />
+                                讓「養老」變成期待已久的度假生活。
+                            </p>
+                            <div className="flex flex-col md:flex-row gap-4 justify-center">
+                                <button
+                                    onClick={onBook}
+                                    className="bg-brand-green text-white px-8 py-4 rounded-full text-lg font-bold hover:bg-teal-600 transition shadow-lg transform hover:scale-105 flex items-center justify-center"
+                                >
+                                    <i className="fa-solid fa-mobile-screen-button mr-2"></i>
+                                    體驗 CaaS 隨選照護
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab("vision")}
+                                    className="bg-white/20 backdrop-blur-md border border-white text-white px-8 py-4 rounded-full text-lg font-bold hover:bg-white hover:text-brand-blue transition shadow-lg"
+                                >
+                                    了解綠色改建與 ESG
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Hero 下方：三大核心優勢卡片 */}
+                    <div className="max-w-7xl mx-auto py-12 px-4">
+                        <div className="text-center mb-10">
+                            <h3 className="text-3xl font-bold text-gray-800 mb-2">三大核心優勢</h3>
+                            <p className="text-gray-500">
+                                點選下方任一優勢，可展開對應的子頁內容，了解更完整的莊園設計與營運模式。
+                            </p>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
+                            <FeatureCard
+                                icon="fa-hotel"
+                                title="頂級旗艦設施"
+                                desc="123 間法式適老化客房、三大公共大廳、空中花園與 KTV 宴會廳，一站式滿足生活、社交與活動需求。"
+                                color="text-blue-600"
+                                active={selectedFeature === "facilities"}
+                                onClick={() => setSelectedFeature("facilities")}
+                            />
+                            <FeatureCard
+                                icon="fa-user-doctor"
+                                title="預防醫學導入"
+                                desc="結合北醫健康管理團隊與在地兩大醫院，從營養、肌力到心靈，全方位預防勝於治療。"
+                                color="text-green-600"
+                                active={selectedFeature === "prevention"}
+                                onClick={() => setSelectedFeature("prevention")}
+                            />
+                            <FeatureCard
+                                icon="fa-mobile-screen"
+                                title="CaaS 科技賦能"
+                                desc="CareBridge App 提供 3 小時模組化隨選服務，18% 平台服務費支援教育訓練與品質監管。"
+                                color="text-purple-600"
+                                active={selectedFeature === "caas"}
+                                onClick={() => setSelectedFeature("caas")}
+                            />
+                        </div>
+
+                        {/* 子頁詳細內容區塊 */}
+                        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
+                            {selectedFeature === "facilities" && <FacilitiesDetail />}
+                            {selectedFeature === "prevention" && <PreventionDetail setActiveTab={setActiveTab} />}
+                            {selectedFeature === "caas" && <CaaSDetail setActiveTab={setActiveTab} />}
+                        </div>
+                    </div>
+
+                    {/* 首頁：單支代表影片區塊 */}
+                    <div className="bg-white py-16">
+                        <div className="max-w-5xl mx-auto px-4 text-center">
+                            <h3 className="text-3xl font-bold text-brand-blue mb-6 font-serif">莊園生活實景搶先看</h3>
+                            <p className="text-gray-600 mb-6">
+                                以下影片節錄自實際場勘與生活想像，完整六支主題影片請見「影音導覽」頁面。
+                            </p>
+                            
+                            <div className="max-w-4xl mx-auto mb-6">
+                                <VideoPlayer youtubeId="Qzgril6ZAD4" title="CareBridge 經營概念" />
+                            </div>
+
+                            <button
+                                onClick={() => setActiveTab("videos")}
+                                className="mt-4 inline-flex items-center text-brand-blue font-bold hover:underline"
+                            >
+                                前往完整影音導覽
+                                <i className="fa-solid fa-arrow-right ml-2 text-sm"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function FeatureCard({ icon, title, desc, color, active, onClick }) {
+            return (
+                <button
+                    onClick={onClick}
+                    className={`bg-white p-6 md:p-8 rounded-xl shadow-lg text-left hover:shadow-2xl transition border-2 ${
+                        active ? "border-brand-blue" : "border-gray-100 hover:border-brand-blue/40"
+                    } w-full`}
+                >
+                    <div className={`${color} text-4xl mb-4`}>
+                        <i className={`fa-solid ${icon}`}></i>
+                    </div>
+                    <h4 className="text-xl font-bold mb-2 text-gray-800">{title}</h4>
+                    <p className="text-gray-600 leading-relaxed text-sm md:text-base">{desc}</p>
+                    <p className="mt-3 text-xs text-brand-blue font-bold flex items-center">
+                        點擊以展開詳細內容
+                        <i className="fa-solid fa-chevron-right ml-1"></i>
+                    </p>
+                </button>
+            );
+        }
+
+        function FacilitiesDetail() {
+            return (
+                <div className="flex flex-col gap-8">
+                    <div>
+                        <h4 className="text-2xl font-bold text-brand-blue mb-4">寶旺萊莊園：頂級旗艦設施總覽</h4>
+                        <p className="text-gray-600 mb-4">
+                            歐亞南投莊園以「飯店規格 × 養生村機能」為核心，將既有寶旺萊 6 號花園酒店升級為
+                            法式養生莊園，兼具旅館的舒適度與長住社群的日常機能。
+                        </p>
+                        <ul className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-700 mb-6">
+                            <li className="flex items-start">
+                                <i className="fa-solid fa-circle-check text-brand-green mr-2 mt-1"></i>
+                                <span>約 123 間適老化客房：無門檻浴室、安全扶手、夜間導引燈。</span>
+                            </li>
+                            <li className="flex items-start">
+                                <i className="fa-solid fa-circle-check text-brand-green mr-2 mt-1"></i>
+                                <span>三大公共大廳：Lobby 迎賓大廳、交誼 Lounge、專屬閱讀與桌遊空間。</span>
+                            </li>
+                            <li className="flex items-start">
+                                <i className="fa-solid fa-circle-check text-brand-green mr-2 mt-1"></i>
+                                <span>空中花園與觀景平台：可舉辦心靈禮拜、晨間伸展與星空音樂會。</span>
+                            </li>
+                            <li className="flex items-start">
+                                <i className="fa-solid fa-circle-check text-brand-green mr-2 mt-1"></i>
+                                <span>專屬 KTV 包廂：隔音良好，適合銀髮歡唱、歌唱班成果發表。</span>
+                            </li>
+                            <li className="flex items-start">
+                                <i className="fa-solid fa-circle-check text-brand-green mr-2 mt-1"></i>
+                                <span>多功能宴會廳：婚禮、旗袍選秀、畫展與企業 ESG 活動皆適用。</span>
+                            </li>
+                            <li className="flex items-start">
+                                <i className="fa-solid fa-circle-check text-brand-green mr-2 mt-1"></i>
+                                <span>健身與復健空間：肌力訓練、瑜珈教室與物理治療區。</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    {/* 寶旺萊實景照片 Grid */}
+                    <div className="border-t border-gray-100 pt-6">
+                        <h5 className="font-bold text-gray-800 mb-4 flex items-center">
+                            <i className="fa-solid fa-camera text-brand-blue mr-2"></i>
+                            莊園實景 (Photos from Figures)
+                        </h5>
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                            {facilityImages.map((img, idx) => (
+                                <div key={idx} className="relative overflow-hidden rounded-lg aspect-[4/3] group cursor-pointer shadow-sm border border-gray-100">
+                                    <img
+                                        src={img.src}
+                                        className="w-full h-full object-cover transition duration-500 group-hover:scale-110"
+                                        alt={img.alt}
+                                        onError={(e) => {
+                                            // Fallback if local image not found in demo
+                                            e.target.onerror = null;
+                                            e.target.parentNode.innerHTML = `<div class="flex items-center justify-center w-full h-full bg-gray-200 text-gray-400 text-xs text-center p-2">圖片載入失敗<br/>請確認 Figures 資料夾<br/>(${img.src})</div>`;
+                                        }}
+                                    />
+                                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-300">
+                                        <span className="text-white font-bold text-sm">{img.alt}</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function PreventionDetail({ setActiveTab }) {
+            const [selectedPillar, setSelectedPillar] = useState(null);
+
+            const handlePillarClick = (num) => {
+                setSelectedPillar(healthDetails[num]);
+            };
+
+            return (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
+                    <div>
+                        <h4 className="text-2xl font-bold text-brand-blue mb-4">預防醫學導入架構</h4>
+                        <p className="text-gray-600 mb-4">
+                            歐亞南投莊園與北醫健康管理師、在地醫院合作，以「健康長者」為核心設計七大預防醫學支柱。
+                            <span className="text-brand-green font-bold ml-1">點擊下方項目可查看詳細內容：</span>
+                        </p>
+                        <div className="space-y-4">
+                            {Object.entries(healthDetails).map(([key, item]) => (
+                                <div 
+                                    key={key} 
+                                    onClick={() => handlePillarClick(key)}
+                                    className="flex items-center p-3 rounded-lg border border-gray-100 bg-white hover:border-brand-blue hover:shadow-md transition cursor-pointer group"
+                                >
+                                    <div className="font-serif text-lg font-bold text-gray-300 mr-3 group-hover:text-brand-blue w-8">{key}</div>
+                                    <h5 className="font-bold text-gray-700 group-hover:text-brand-blue">{item.title}</h5>
+                                    <i className="fa-solid fa-chevron-right ml-auto text-gray-300 group-hover:text-brand-blue text-xs"></i>
+                                </div>
+                            ))}
+                        </div>
+                        <button
+                            onClick={() => setActiveTab("health")}
+                            className="inline-flex items-center text-brand-blue font-bold hover:underline text-sm mt-4"
+                        >
+                            前往「預防醫學」專頁
+                            <i className="fa-solid fa-arrow-right ml-2"></i>
+                        </button>
+                    </div>
+
+                    <div className="relative">
+                         {/* 24H 守護 or Pillar Detail */}
+                         {selectedPillar ? (
+                             <div className="bg-white p-6 rounded-2xl shadow-lg border border-brand-green/20 animate-fade-in">
+                                 <button 
+                                    onClick={() => setSelectedPillar(null)}
+                                    className="mb-4 text-sm text-gray-500 hover:text-brand-blue flex items-center"
+                                 >
+                                    <i className="fa-solid fa-arrow-left mr-1"></i> 返回儀表板
+                                 </button>
+                                 <img src={selectedPillar.img} className="w-full h-48 object-cover rounded-xl mb-4" />
+                                 <h3 className="text-2xl font-bold text-brand-blue mb-2">{selectedPillar.title}</h3>
+                                 <p className="text-gray-600 leading-relaxed">{selectedPillar.content}</p>
+                             </div>
+                         ) : (
+                             <div className="bg-blue-50 p-6 rounded-2xl border border-blue-100">
+                                <h5 className="font-bold text-lg mb-4 flex items-center text-brand-blue">
+                                    <i className="fa-solid fa-chart-line mr-2"></i>
+                                    典型住民健康儀表板 (示意)
+                                </h5>
+                                <div className="flex items-center mb-6">
+                                    <img
+                                        src="https://randomuser.me/api/portraits/women/66.jpg"
+                                        className="w-16 h-16 rounded-full mr-4 border-2 border-brand-blue p-1"
+                                    />
+                                    <div>
+                                        <h4 className="font-bold text-xl">張雅惠 女士 · 72 歲</h4>
+                                        <p className="text-sm text-green-700 flex items-center">
+                                            <i className="fa-solid fa-circle-check mr-1"></i>
+                                            健康狀況穩定 · 每週運動 4 次
+                                        </p>
+                                    </div>
+                                </div>
+                                <ProgressBar
+                                    label="本週肌力訓練達成率"
+                                    percent="85"
+                                    color="bg-brand-blue"
+                                />
+                                <ProgressBar
+                                    label="營養攝取均衡度"
+                                    percent="92"
+                                    color="bg-brand-green"
+                                />
+                                <ProgressBar
+                                    label="睡眠品質評分"
+                                    percent="78"
+                                    color="bg-purple-500"
+                                />
+                                <div className="mt-6 bg-white p-4 rounded-lg flex items-start">
+                                    <i className="fa-solid fa-user-doctor text-brand-blue text-xl mt-1 mr-3"></i>
+                                    <div>
+                                        <p className="font-bold text-sm text-brand-blue">北醫健康管理師建議：</p>
+                                        <p className="text-xs text-gray-600 mt-1">
+                                            建議將「鳥嘴潭健走」排入每週行程兩次，搭配足量日照與伸展運動。
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                         )}
+                    </div>
+                </div>
+            );
+        }
+
+        function CaaSDetail({ setActiveTab }) {
+            return (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                    <div>
+                        <h4 className="text-2xl font-bold text-brand-blue mb-4">CaaS 科技賦能：Care-as-a-Service</h4>
+                        <p className="text-gray-600 mb-4">
+                            CareBridge CaaS 平台以手機 App 為入口，將照服員、護理師與家屬串聯在同一個
+                            生態系中，以「3 小時模組」為基本單位，打造彈性又可預測的照護供給。
+                        </p>
+                        <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700 mb-4">
+                            <li>選擇服務：陪同就醫、復健陪同、沐浴協助、備餐與家務等。</li>
+                            <li>選擇時段：一次預約 3 小時，可彈性串接成半日或整日服務。</li>
+                            <li>AI 媒合：根據地點、評分與專長，自動媒合最合適的照服員。</li>
+                            <li>18% 平台費：投入教育訓練、品質監控與緊急應變支援。</li>
+                            <li>即時回饋：家屬可於 App 查看服務紀錄與長者當日狀態摘要。</li>
+                        </ol>
+                        <button
+                            onClick={() => setActiveTab("caas")}
+                            className="inline-flex items-center text-brand-blue font-bold hover:underline text-sm"
+                        >
+                            進一步查看「CaaS 科技賦能」教學步驟
+                            <i className="fa-solid fa-arrow-right ml-2"></i>
+                        </button>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-2xl border border-gray-200">
+                        <p className="text-xs text-gray-500 mb-2 font-bold">
+                            App 介面示意 (更多互動版請點選右上角「CaaS App 體驗」)
+                        </p>
+                        <div className="phone-mockup">
+                            <div className="phone-notch"></div>
+                            <div className="bg-brand-blue text-white p-4 pt-10 flex justify-between items-center shadow-md z-10">
+                                <span className="font-bold font-serif">CareBridge</span>
+                                <div className="flex space-x-3">
+                                    <i className="fa-solid fa-bell text-sm"></i>
+                                </div>
+                            </div>
+                            <div className="flex-grow bg-gray-50 overflow-y-auto relative">
+                                <div className="p-4 pb-20">
+                                    <div className="flex justify-between items-end mb-4">
+                                        <div>
+                                            <p className="text-gray-500 text-xs">早安</p>
+                                            <h3 className="font-bold text-xl text-gray-800">張雅惠 女士</h3>
+                                        </div>
+                                        <img
+                                            src="https://randomuser.me/api/portraits/women/66.jpg"
+                                            className="w-10 h-10 rounded-full border border-gray-300"
+                                        />
+                                    </div>
+                                    <button className="w-full bg-red-500 text-white py-2.5 rounded-xl font-bold shadow-lg mb-4 flex items-center justify-center text-xs">
+                                        <i className="fa-solid fa-phone-volume mr-2"></i>
+                                        24H 緊急呼叫護理站
+                                    </button>
+                                    <p className="text-xs text-gray-500 mb-2 font-bold">CaaS 隨選服務 (3 小時模組)</p>
+                                    <div className="grid grid-cols-2 gap-3 mb-6">
+                                        <MiniService icon="fa-user-nurse" color="text-blue-500" label="陪同就醫" />
+                                        <MiniService icon="fa-hands-holding-circle" color="text-green-500" label="復健陪同" />
+                                        <MiniService icon="fa-shower" color="text-orange-500" label="沐浴協助" />
+                                        <MiniService icon="fa-utensils" color="text-purple-500" label="備餐服務" />
+                                    </div>
+                                    <div className="bg-white p-3 rounded-xl shadow-sm text-xs text-gray-600">
+                                        <p className="font-bold mb-1">範例訂單：</p>
+                                        <p>11/24 (一) 09:00 - 12:00 陪同就醫</p>
+                                        <p>基本費用 $1,000 + 平台費 18% = 總計 $1,180</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function MiniService({ icon, color, label }) {
+            return (
+                <div className="bg-white p-3 rounded-xl shadow-sm text-center flex flex-col items-center justify-center text-[11px]">
+                    <i className={`fa-solid ${icon} text-2xl ${color} mb-1`}></i>
+                    <p className="font-bold text-gray-700">{label}</p>
+                </div>
+            );
+        }
+
+        function ProgressBar({ label, percent, color }) {
+            return (
+                <div className="mb-3">
+                    <div className="flex justify-between mb-1">
+                        <span className="text-sm font-medium text-gray-700">{label}</span>
+                        <span className="text-sm font-bold text-gray-700">{percent}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2.5">
+                        <div
+                            className={`h-2.5 rounded-full transition-all duration-1000 ${color}`}
+                            style={{ width: `${percent}%` }}
+                        ></div>
+                    </div>
+                </div>
+            );
+        }
+
+        // --- 綠色願景 Section ---
+        function VisionSection() {
+            return (
+                <div className="max-w-7xl mx-auto py-12 px-4 animate-fade-in">
+                    <div className="bg-brand-green/10 rounded-3xl p-8 md:p-12 flex flex-col md:flex-row items-center gap-8">
+                        <div className="md:w-1/2">
+                            <img
+                                src="https://images.unsplash.com/photo-1518005052351-1bfa11d71233?auto=format&fit=crop&w=900&q=80"
+                                className="rounded-2xl shadow-lg w-full"
+                                alt="Green Building"
+                            />
+                        </div>
+                        <div className="md:w-1/2">
+                            <span className="text-brand-green font-bold tracking-widest text-sm uppercase">
+                                ESG · 資產活化 · 減碳改建
+                            </span>
+                            <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mt-2 mb-4">
+                                租借改建，而非重建：
+                                <br />
+                                為地球省下更多碳排
+                            </h2>
+                            <p className="text-gray-600 text-sm md:text-base leading-relaxed mb-4">
+                                CareBridge 選擇「租借改建」寶旺萊 6 號花園酒店，而不是大規模新建工程。
+                                透過活化既有結構，我們減少了大量營建廢棄物與隱含碳排 (Embodied Carbon)，
+                                同時保留在地人對這棟建築的情感記憶。
+                            </p>
+                            <ul className="space-y-2 text-sm text-gray-700 mb-4">
+                                <li>
+                                    <i className="fa-solid fa-leaf text-brand-green mr-2"></i>
+                                    預估可減少超過 60% 營建廢棄物與新建材料需求。
+                                </li>
+                                <li>
+                                    <i className="fa-solid fa-bolt text-brand-green mr-2"></i>
+                                    導入全熱交換、節能空調與照明控制系統，降低長期用電。
+                                </li>
+                                <li>
+                                    <i className="fa-solid fa-hand-holding-heart text-brand-green mr-2"></i>
+                                    以在地工班與材料優先，創造地方就業並縮短供應鏈碳足跡。
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // --- 預防醫學 Section ---
+        function HealthSection() {
+            const [selectedDetail, setSelectedDetail] = useState(null);
+
+            return (
+                <div className="max-w-7xl mx-auto py-12 px-4 animate-fade-in">
+                    <div className="text-center mb-12">
+                        <h2 className="text-3xl md:text-4xl font-bold text-brand-blue mb-3">全方位預防醫學與 24H 守護</h2>
+                        <p className="text-lg text-gray-600">
+                            「預防」與「即時守護」缺一不可：七大支柱打造健康基底，24 小時醫護與 AI 系統負責關鍵防線。
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start mb-12">
+                        {/* 左側：七大支柱列表 */}
+                        <div className="space-y-4">
+                            {Object.entries(healthDetails).map(([key, item]) => (
+                                <div 
+                                    key={key}
+                                    onClick={() => setSelectedDetail(item)}
+                                    className={`flex items-start p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition cursor-pointer border ${selectedDetail && selectedDetail.title === item.title ? 'border-brand-blue bg-blue-50' : 'border-transparent'}`}
+                                >
+                                    <div className="font-serif text-2xl font-bold text-gray-300 mr-4">
+                                        {key}
+                                    </div>
+                                    <div>
+                                        <h4 className={`font-bold text-lg ${selectedDetail && selectedDetail.title === item.title ? 'text-brand-blue' : 'text-gray-800'}`}>{item.title}</h4>
+                                        <p className="text-sm text-gray-500 line-clamp-1">點擊查看詳細執行方式...</p>
+                                    </div>
+                                    <i className="fa-solid fa-chevron-right ml-auto text-gray-300 mt-2"></i>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* 右側：24H 醫護守護圖解 OR 詳細資料 */}
+                        {selectedDetail ? (
+                             <div className="bg-white p-8 rounded-2xl shadow-lg border-t-4 border-brand-green animate-fade-in relative">
+                                <button 
+                                    onClick={() => setSelectedDetail(null)}
+                                    className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+                                >
+                                    <i className="fa-solid fa-times text-xl"></i>
+                                </button>
+                                <img src={selectedDetail.img} className="w-full h-56 object-cover rounded-xl mb-6" />
+                                <h3 className="text-2xl font-bold text-brand-blue mb-4">{selectedDetail.title}</h3>
+                                <p className="text-gray-700 leading-relaxed text-lg">{selectedDetail.content}</p>
+                                <button 
+                                    onClick={() => setSelectedDetail(null)}
+                                    className="mt-8 w-full bg-gray-100 text-gray-600 py-3 rounded-lg hover:bg-gray-200 transition font-bold"
+                                >
+                                    返回總覽
+                                </button>
+                             </div>
+                        ) : (
+                            <div className="bg-white p-8 rounded-2xl shadow-lg border-t-4 border-blue-500">
+                                <h3 className="text-xl font-bold mb-6 flex items-center">
+                                    <i className="fa-solid fa-shield-heart text-blue-500 mr-3 text-2xl"></i>
+                                    24H 醫護守護方案 (示意流程)
+                                </h3>
+                                <div className="space-y-6 relative">
+                                    <div className="absolute left-6 top-8 bottom-8 w-0.5 bg-gray-200"></div>
+                                    <div className="relative pl-16">
+                                        <div className="absolute left-0 w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center text-yellow-600 font-bold border-4 border-white shadow-sm">
+                                            日
+                                        </div>
+                                        <h4 className="font-bold text-lg">08:00 - 18:00 日間照護</h4>
+                                        <p className="text-gray-500 text-sm">
+                                            護理師、健康管理師與照服員全體在莊園內駐點，處理藥物管理、慢病追蹤與日常照護。
+                                        </p>
+                                    </div>
+                                    <div className="relative pl-16">
+                                        <div className="absolute left-0 w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-bold border-4 border-white shadow-sm">
+                                            夜
+                                        </div>
+                                        <h4 className="font-bold text-lg">18:00 - 08:00 夜間守護</h4>
+                                        <p className="text-gray-500 text-sm">
+                                            值班護理師 + AI 毫米波雷達持續監測呼吸、心跳與離床狀態，降低夜間猝發風險。
+                                        </p>
+                                    </div>
+                                    <div className="relative pl-16">
+                                        <div className="absolute left-0 w-12 h-12 bg-red-100 rounded-full flex items-center justify-center text-red-600 font-bold border-4 border-white shadow-sm">
+                                            急
+                                        </div>
+                                        <h4 className="font-bold text-lg">異常事件即時應變</h4>
+                                        <p className="text-gray-500 text-sm">
+                                            一旦偵測到異常，系統立即通知護理站與 On-Call 醫師，同步啟動與合作醫院的綠色通道後送流程。
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        // --- 莊園生活 Section ---
+        function ActivitySection() {
+            const [selectedActivity, setSelectedActivity] = useState(null);
+            const [showSuccess, setShowSuccess] = useState(false);
+
+            const handleSignUp = (e) => {
+                e.preventDefault();
+                setShowSuccess(true);
+                setTimeout(() => {
+                    setShowSuccess(false);
+                    setSelectedActivity(null);
+                }, 2000);
+            };
+
+            return (
+                <div className="max-w-7xl mx-auto py-12 px-4 animate-fade-in">
+                    <div className="text-center mb-12">
+                        <h2 className="text-3xl font-bold mb-2 text-brand-blue">精彩莊園生活</h2>
+                        <p className="text-gray-500">
+                            從心靈禮拜、旗袍走秀到畫展與婚禮，每一位住民都可以成為主角。
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+                        {activities.map((act) => (
+                            <div
+                                key={act.id}
+                                className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition group border border-gray-100"
+                            >
+                                <div className="h-48 bg-gray-200 relative overflow-hidden">
+                                    <img
+                                        src={`https://source.unsplash.com/random/600x400/?${
+                                            act.type === "心靈"
+                                                ? "church"
+                                                : act.type === "娛樂"
+                                                ? "fashion"
+                                                : act.type === "健康"
+                                                ? "gym"
+                                                : "hiking"
+                                        }`}
+                                        className="w-full h-full object-cover group-hover:scale-110 transition duration-700"
+                                    />
+                                    <div className="absolute top-4 right-4 bg-white/90 backdrop-blur text-brand-blue px-3 py-1 rounded-full text-xs font-bold shadow-sm">
+                                        {act.type}
+                                    </div>
+                                </div>
+                                <div className="p-6">
+                                    <h4 className="font-bold text-xl mb-2 flex items-center">
+                                        <i className={`fa-solid ${act.icon} mr-2 text-brand-green`}></i>
+                                        {act.title}
+                                    </h4>
+                                    <div className="text-sm text-gray-500 mb-4 space-y-1">
+                                        <p>
+                                            <i className="fa-regular fa-clock mr-2 w-4"></i>
+                                            {act.time}
+                                        </p>
+                                        <p>
+                                            <i className="fa-solid fa-location-dot mr-2 w-4"></i>
+                                            {act.loc}
+                                        </p>
+                                    </div>
+                                    <p className="text-gray-600 text-sm mb-6 line-clamp-2">{act.desc}</p>
+                                    <button 
+                                        onClick={() => setSelectedActivity(act)}
+                                        className="w-full border border-brand-blue text-brand-blue py-2 rounded-lg hover:bg-brand-blue hover:text-white transition text-sm font-bold"
+                                    >
+                                        查看詳情 / 報名
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* 回憶錄照片集錦 */}
+                    <div className="bg-white p-8 rounded-xl shadow-inner">
+                        <h3 className="text-2xl font-bold mb-6 text-center">
+                            <i className="fa-solid fa-camera-retro mr-2"></i>
+                            莊園回憶錄
+                        </h3>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <GalleryItem src="https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=600&q=80" label="浪漫婚禮" />
+                            <GalleryItem src="https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?auto=format&fit=crop&w=600&q=80" label="藝術畫展" />
+                            <GalleryItem src="https://images.unsplash.com/photo-1516450360452-631d408d3995?auto=format&fit=crop&w=600&q=80" label="KTV 歡唱" />
+                            <GalleryItem src="https://images.unsplash.com/photo-1533174072545-e8d4aa97d848?auto=format&fit=crop&w=600&q=80" label="空中花園夜景" />
+                            <GalleryItem src="https://images.unsplash.com/photo-1544367563-12123d8965cd?auto=format&fit=crop&w=600&q=80" label="茶道體驗" />
+                            <GalleryItem src="https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?auto=format&fit=crop&w=600&q=80" label="晨間太極" />
+                            <GalleryItem src="https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?auto=format&fit=crop&w=600&q=80" label="園藝時光" />
+                            <GalleryItem src="https://images.unsplash.com/photo-1576267423048-15c0040fec78?auto=format&fit=crop&w=600&q=80" label="書法教室" />
+                        </div>
+                    </div>
+
+                    {/* Activity Modal */}
+                    {selectedActivity && (
+                        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+                            <div className="bg-white rounded-2xl w-full max-w-lg overflow-hidden relative shadow-2xl">
+                                <button onClick={() => setSelectedActivity(null)} className="absolute top-4 right-4 z-10 text-gray-500 hover:text-gray-800">
+                                    <i className="fa-solid fa-xmark text-2xl"></i>
+                                </button>
+                                
+                                {showSuccess ? (
+                                    <div className="p-12 text-center flex flex-col items-center justify-center h-full">
+                                        <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6 text-green-500 text-4xl animate-bounce">
+                                            <i className="fa-solid fa-check"></i>
+                                        </div>
+                                        <h3 className="text-2xl font-bold mb-2">報名成功！</h3>
+                                        <p className="text-gray-500">我們已收到您的資訊，將會有專人與您聯繫確認。</p>
+                                    </div>
+                                ) : (
+                                    <React.Fragment>
+                                        <div className="h-40 bg-gray-200 relative">
+                                            <img
+                                                src={`https://source.unsplash.com/random/800x400/?${selectedActivity.type === "心靈" ? "church" : selectedActivity.type === "娛樂" ? "fashion" : selectedActivity.type === "健康" ? "gym" : "hiking"}`}
+                                                className="w-full h-full object-cover"
+                                            />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent p-6 flex flex-col justify-end">
+                                                <h3 className="text-2xl font-bold text-white">{selectedActivity.title}</h3>
+                                            </div>
+                                        </div>
+                                        <div className="p-6">
+                                            <div className="flex gap-4 mb-4 text-sm text-gray-600">
+                                                <span><i className="fa-regular fa-clock mr-1"></i> {selectedActivity.time}</span>
+                                                <span><i className="fa-solid fa-location-dot mr-1"></i> {selectedActivity.loc}</span>
+                                            </div>
+                                            <p className="text-gray-700 mb-6 leading-relaxed">{selectedActivity.detail}</p>
+                                            
+                                            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                                                <h4 className="font-bold text-brand-blue mb-3">線上報名表</h4>
+                                                <form onSubmit={handleSignUp} className="space-y-3">
+                                                    <input type="text" required placeholder="您的姓名" className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:border-brand-blue" />
+                                                    <input type="tel" required placeholder="聯絡電話" className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:border-brand-blue" />
+                                                    <div className="flex gap-2">
+                                                        <input type="number" min="1" defaultValue="1" className="w-1/3 p-2 border border-gray-300 rounded-lg" placeholder="人數" />
+                                                        <button type="submit" className="w-2/3 bg-brand-green text-white font-bold rounded-lg hover:bg-teal-600 transition">
+                                                            確認報名
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </React.Fragment>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        function GalleryItem({ src, label }) {
+            return (
+                <div className="relative group overflow-hidden rounded-lg aspect-video cursor-pointer">
+                    <img src={src} className="w-full h-full object-cover transition duration-500 group-hover:scale-110" />
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-white font-bold text-sm text-center px-2">
+                        {label}
+                    </div>
+                </div>
+            );
+        }
+
+        // --- 周邊景點 Section ---
+        function ScenerySection() {
+            // 預設選擇第一筆資料 (鳥嘴潭人工湖)
+            const [selectedSpot, setSelectedSpot] = useState(scenicSpots[0]);
+            const [isModalOpen, setIsModalOpen] = useState(false);
+
+            const handleSpotClick = (spot) => {
+                setSelectedSpot(spot);
+                setIsModalOpen(true); // 手機板打開 Modal
+            };
+
+            return (
+                <div className="max-w-7xl mx-auto py-12 px-4 animate-fade-in relative">
+                    <div className="text-center mb-10">
+                        <span className="text-brand-green font-bold tracking-widest text-sm uppercase">
+                            Travel
+                        </span>
+                        <h2 className="text-3xl font-bold text-gray-800 mt-2">樂齡輕旅行：周邊 10 大景點</h2>
+                        <p className="text-gray-500 mt-2">
+                            以莊園為基地，開車 15–30 分鐘可抵達湖泊、溫泉、步道、美術館與夜市，適合三天兩夜慢旅行。
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {/* 景點列表 */}
+                        <div className="space-y-4 h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+                            {scenicSpots.map((spot, idx) => (
+                                <div
+                                    key={idx}
+                                    onClick={() => handleSpotClick(spot)}
+                                    className={`flex items-center p-4 rounded-xl border cursor-pointer transition-all ${
+                                        selectedSpot && selectedSpot.name === spot.name
+                                            ? "border-brand-blue bg-blue-50 shadow-md"
+                                            : "border-gray-200 bg-white hover:bg-gray-50"
+                                    }`}
+                                >
+                                    <img
+                                        src={spot.img}
+                                        className="w-24 h-24 rounded-lg object-cover mr-4 flex-shrink-0"
+                                    />
+                                    <div>
+                                        <span className="bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded mb-1 inline-block">
+                                            #{spot.tag}
+                                        </span>
+                                        <h4 className="font-bold text-lg">{spot.name}</h4>
+                                        <p className="text-sm text-gray-500 line-clamp-1">{spot.desc}</p>
+                                    </div>
+                                    <i className="fa-solid fa-chevron-right ml-auto text-gray-300"></i>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* 電腦版：景點詳情 (Sticky) */}
+                        <div className="hidden md:block">
+                            <div className="sticky top-24 bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 h-[600px]">
+                                {selectedSpot ? (
+                                    <SceneryDetailContent spot={selectedSpot} />
+                                ) : (
+                                    <div className="h-full flex flex-col items-center justify-center text-gray-400 p-8 text-center">
+                                        <i className="fa-regular fa-map text-6xl mb-4"></i>
+                                        <p className="text-xl">
+                                            請點選左側景點
+                                            <br />
+                                            查看詳細介紹與行程建議
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 手機版：景點詳情 Modal */}
+                    {isModalOpen && selectedSpot && (
+                        <div className="md:hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+                             <div className="bg-white rounded-2xl w-full max-w-sm overflow-hidden relative shadow-2xl h-[500px]">
+                                <button 
+                                    onClick={() => setIsModalOpen(false)}
+                                    className="absolute top-4 right-4 z-10 bg-black/50 text-white w-8 h-8 rounded-full flex items-center justify-center"
+                                >
+                                    <i className="fa-solid fa-xmark"></i>
+                                </button>
+                                <SceneryDetailContent spot={selectedSpot} isMobile={true} />
+                             </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        // 抽離出景點詳情內容元件 (含 Google Maps)
+        function SceneryDetailContent({ spot, isMobile }) {
+            const [showMap, setShowMap] = useState(false);
+
+            // 當切換景點時，重置地圖狀態
+            useEffect(() => {
+                setShowMap(false);
+            }, [spot]);
+
+            return (
+                <div className="h-full flex flex-col animate-fade-in">
+                    <div className="h-1/2 bg-gray-200 relative shrink-0">
+                         {showMap ? (
+                            <div className="w-full h-full map-container">
+                                <iframe 
+                                    src={`https://maps.google.com/maps?q=${spot.mapQuery}&t=&z=14&ie=UTF8&iwloc=&output=embed`}
+                                    allowFullScreen
+                                ></iframe>
+                                <button 
+                                    onClick={() => setShowMap(false)}
+                                    className="absolute bottom-4 right-4 bg-white text-gray-800 px-3 py-1 rounded-full shadow-md text-sm font-bold z-10"
+                                >
+                                    <i className="fa-solid fa-image mr-1"></i> 返回圖片
+                                </button>
+                            </div>
+                        ) : (
+                            <React.Fragment>
+                                <img
+                                    src={spot.img}
+                                    className="w-full h-full object-cover"
+                                />
+                                <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/70 to-transparent p-6">
+                                    <h3 className="text-white text-2xl font-bold">
+                                        {spot.name}
+                                    </h3>
+                                </div>
+                            </React.Fragment>
+                        )}
+                    </div>
+                    <div className="p-6 flex-grow bg-white flex flex-col overflow-y-auto">
+                        <div className="flex items-center mb-4 text-sm text-gray-500 shrink-0">
+                            <span className="mr-4">
+                                <i className="fa-solid fa-car mr-1"></i>
+                                車程約 15–30 分
+                            </span>
+                            <span>
+                                <i className="fa-solid fa-person-hiking mr-1"></i>
+                                適合健走與輕度登山
+                            </span>
+                        </div>
+                        <p className="text-gray-700 leading-relaxed text-base flex-grow">
+                            {spot.desc}
+                        </p>
+                        
+                        <div className="mt-4 shrink-0 grid grid-cols-2 gap-3">
+                            <button 
+                                onClick={() => setShowMap(true)}
+                                className="bg-gray-100 text-gray-700 py-3 rounded-lg font-bold hover:bg-gray-200 transition text-sm flex items-center justify-center"
+                            >
+                                <i className="fa-solid fa-map mr-2"></i>
+                                查看地圖
+                            </button>
+                            <a 
+                                href={`https://www.google.com/maps/search/?api=1&query=${spot.mapQuery}`} 
+                                target="_blank"
+                                className="bg-brand-green text-white py-3 rounded-lg font-bold hover:bg-teal-600 transition text-sm flex items-center justify-center"
+                            >
+                                <i className="fa-solid fa-location-arrow mr-2"></i>
+                                導航路線
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // --- 影音導覽 Section ---
+        function VideoSection() {
+            return (
+                <div className="max-w-7xl mx-auto py-12 px-4 animate-fade-in">
+                    <h2 className="text-3xl font-bold text-center mb-10 text-brand-blue">
+                        莊園實境影音導覽
+                    </h2>
+                    <p className="text-center text-gray-600 mb-8 text-sm md:text-base">
+                        影片分為四大主題：綠色企業與減碳改建、莊園氛圍、預防醫學一日生活，以及區位與活動設計，
+                        讓評審與投資人快速理解本計畫的核心價值與實際場域。
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {videoData.map((video) => (
+                            <div key={video.id} className="bg-white p-4 rounded-xl shadow-md">
+                                <VideoPlayer youtubeId={video.youtubeId} title={video.title} />
+                                <h4 className="font-bold text-lg text-gray-800 mt-4">{video.title}</h4>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        }
+
+        // --- CaaS 科技賦能 Section ---
+        function CaaSSection({ onBook }) {
+            return (
+                <div className="max-w-7xl mx-auto py-12 px-4 animate-fade-in">
+                    <div className="text-center mb-10">
+                        <h2 className="text-3xl font-bold text-brand-blue mb-3">CaaS 科技賦能：App 操作與願景</h2>
+                        <p className="text-lg text-gray-600">
+                            CareBridge 看護快線以 App 為核心，將人力媒合、照護品質與長期數據整合成一個可視化平台。
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
+                        <div>
+                            <h3 className="font-bold text-xl mb-4 flex items-center">
+                                <i className="fa-solid fa-list-ol text-brand-blue mr-2"></i>
+                                三步驟完成 3 小時 CaaS 預約
+                            </h3>
+                            <ol className="list-decimal list-inside space-y-3 text-sm text-gray-700 mb-6">
+                                <li>
+                                    <span className="font-bold">選擇服務類型：</span>陪同就醫、復健陪同、沐浴協助、備餐家務等。
+                                </li>
+                                <li>
+                                    <span className="font-bold">選擇日期與 3 小時時段：</span>例如 09:00–12:00，或 14:00–17:00，可串接成半日或整日服務。    
+                                </li>
+                                <li>
+                                    <span className="font-bold">AI 智能媒合：</span>系統考量距離、評價與專長，自動推薦 1–3 位合適照服員供長者/家屬選擇。
+                                </li>
+                            </ol>
+
+                            <h3 className="font-bold text-xl mb-4 flex items-center">
+                                <i className="fa-solid fa-percent text-brand-blue mr-2"></i>
+                                18% 平台服務費如何運用？
+                            </h3>
+                            <ul className="space-y-2 text-sm text-gray-700 mb-6">
+                                <li>用於照服員職前與在職教育訓練。</li>
+                                <li>建立品質稽核與申訴管道，降低家庭風險。</li>
+                                <li>維護 24H 緊急支援與保險機制。</li>
+                                <li>開發 AI 模型與營運系統，持續優化媒合效率。</li>
+                            </ul>
+
+                            <button
+                                onClick={onBook}
+                                className="bg-brand-blue text-white px-6 py-3 rounded-full text-sm font-bold hover:bg-blue-700 transition shadow-lg flex items-center"
+                            >
+                                <i className="fa-solid fa-mobile-screen mr-2"></i>
+                                馬上體驗 App 模擬畫面
+                            </button>
+                        </div>
+                        <div>
+                            <PhoneAppSimulation inlineDemo={true} />
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // --- 手機 App 模擬器 ---
+        function PhoneAppSimulation({ onClose, inlineDemo = false }) {
+            const [step, setStep] = useState(1);
+
+            return (
+                <div className="phone-mockup shadow-2xl flex flex-col select-none">
+                    <div className="phone-notch"></div>
+
+                    {/* App Header */}
+                    <div className="bg-brand-blue text-white p-4 pt-10 flex justify-between items-center shadow-md z-10">
+                        <span className="font-bold font-serif">CareBridge</span>
+                        <div className="flex space-x-3">
+                            <i className="fa-solid fa-headset text-sm"></i>
+                            <i className="fa-solid fa-bell text-sm"></i>
+                        </div>
+                    </div>
+
+                    {/* App Content Area */}
+                    <div className="flex-grow bg-gray-50 overflow-y-auto relative">
+                        {/* Step 1: Dashboard */}
+                        {step === 1 && (
+                            <div className="p-4 animate-fade-in pb-20">
+                                <div className="flex justify-between items-end mb-4">
+                                    <div>
+                                        <p className="text-gray-500 text-xs">早安，美好的一天</p>
+                                        <h3 className="font-bold text-xl text-gray-800">張雅惠 女士</h3>
+                                    </div>
+                                    <img
+                                        src="https://randomuser.me/api/portraits/women/66.jpg"
+                                        className="w-10 h-10 rounded-full border border-gray-300"
+                                    />
+                                </div>
+
+                                {/* 24H SOS 按鈕 */}
+                                <button className="w-full bg-red-500 text-white py-3 rounded-xl font-bold shadow-lg mb-4 animate-pulse flex items-center justify-center text-sm">
+                                    <i className="fa-solid fa-phone-volume mr-2"></i>
+                                    24H 緊急呼叫護理站
+                                </button>
+
+                                {/* 今日行程 Card */}
+                                <div className="bg-white p-4 rounded-xl shadow-sm mb-6 border-l-4 border-brand-green">
+                                    <div className="flex justify-between">
+                                        <p className="text-xs text-gray-500 font-bold">NEXT SCHEDULE</p>
+                                        <span className="bg-green-100 text-green-800 text-[10px] px-2 py-0.5 rounded-full">
+                                            即將開始
+                                        </span>
+                                    </div>
+                                    <p className="font-bold text-lg mt-1">09:00 預防醫學檢查</p>
+                                    <p className="text-sm text-gray-500">
+                                        <i className="fa-solid fa-location-dot mr-1"></i>
+                                        1F 健康中心
+                                    </p>
+                                </div>
+
+                                {/* 隨選服務 Grid */}
+                                <h4 className="font-bold mb-3 text-gray-700 text-sm">CaaS 隨選服務 (3 小時)</h4>
+                                <div className="grid grid-cols-2 gap-3 mb-6">
+                                    <AppServiceBtn 
+                                        icon="fa-user-nurse" 
+                                        color="text-blue-500" 
+                                        label="陪同就醫" 
+                                        onClick={() => setStep(2)}
+                                    />
+                                    <AppServiceBtn 
+                                        icon="fa-hands-holding-circle" 
+                                        color="text-green-500" 
+                                        label="復健陪同" 
+                                    />
+                                    <AppServiceBtn 
+                                        icon="fa-shower" 
+                                        color="text-orange-500" 
+                                        label="沐浴協助" 
+                                    />
+                                    <AppServiceBtn 
+                                        icon="fa-utensils" 
+                                        color="text-purple-500" 
+                                        label="備餐服務" 
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Step 2: 預約詳情 */}
+                        {step === 2 && (
+                            <div className="p-4 animate-fade-in bg-white h-full flex flex-col">
+                                <button 
+                                    onClick={() => setStep(1)}
+                                    className="text-gray-500 mb-4 flex items-center text-sm"
+                                >
+                                    <i className="fa-solid fa-chevron-left mr-1"></i>
+                                    返回
+                                </button>
+                                <h3 className="font-bold text-xl mb-6">預約陪同就醫</h3>
+                                
+                                <div className="space-y-4 flex-grow">
+                                    <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                                        <label className="text-xs text-gray-500 block mb-1">
+                                            服務時段 (3 小時模組)
+                                        </label>
+                                        <div className="flex items-center font-bold text-gray-800">
+                                            <i className="fa-regular fa-clock mr-2 text-brand-blue"></i>
+                                            11/24 (一) 09:00 - 12:00
+                                        </div>
+                                    </div>
+                                    <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                                        <label className="text-xs text-gray-500 block mb-1">目的地</label>
+                                        <div className="flex items-center font-bold text-gray-800">
+                                            <i className="fa-solid fa-hospital mr-2 text-red-500"></i>
+                                            佑民醫院 (綠色通道)
+                                        </div>
+                                    </div>
+                                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 text-sm">
+                                        <div className="flex justify-between items-center mb-2">
+                                            <span className="text-sm text-gray-600">基本服務費</span>
+                                            <span className="font-bold">$1,000</span>
+                                        </div>
+                                        <div className="flex justify-between items-center mb-2">
+                                            <span className="text-sm text-gray-600">平台服務費 (18%)</span>
+                                            <span className="font-bold">$180</span>
+                                        </div>
+                                        <div className="border-t border-blue-200 my-2"></div>
+                                        <div className="flex justify-between items-center text-lg">
+                                            <span className="font-bold text-brand-blue">總計</span>
+                                            <span className="font-bold text-brand-blue">$1,180</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button 
+                                    onClick={() => setStep(3)}
+                                    className="w-full bg-brand-blue text-white py-3 rounded-xl font-bold shadow-lg hover:bg-blue-700 mt-4 flex items-center justify-center"
+                                >
+                                    <i className="fa-solid fa-wand-magic-sparkles mr-2"></i>
+                                    AI 智能媒合
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Step 3: 媒合成功 */}
+                        {step === 3 && (
+                            <div className="h-full flex flex-col items-center justify-center p-6 animate-fade-in text-center">
+                                <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mb-6 animate-bounce">
+                                    <i className="fa-solid fa-check text-5xl text-green-500"></i>
+                                </div>
+                                <h3 className="font-bold text-2xl mb-2">預約成功！</h3>
+                                <p className="text-gray-500 mb-6">AI 已為您安排 L3 級專業照服員</p>
+
+                                <div className="bg-white p-4 rounded-xl shadow-md w-full border border-gray-100 flex items-center text-left mb-6">
+                                    <img
+                                        src="https://randomuser.me/api/portraits/women/44.jpg"
+                                        className="w-14 h-14 rounded-full mr-4 border-2 border-gray-100"
+                                    />
+                                    <div>
+                                        <p className="font-bold text-lg">陳美玲 技術士</p>
+                                        <p className="text-xs text-gray-500 mb-1">
+                                            CareBridge L3 認證 · 護理背景
+                                        </p>
+                                        <div className="flex text-yellow-400 text-xs items-center">
+                                            <i className="fa-solid fa-star"></i>
+                                            <i className="fa-solid fa-star"></i>
+                                            <i className="fa-solid fa-star"></i>
+                                            <i className="fa-solid fa-star"></i>
+                                            <i className="fa-solid fa-star-half-stroke"></i>
+                                            <span className="text-gray-400 ml-1">(4.9)</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {!inlineDemo && (
+                                    <button 
+                                        onClick={() => {
+                                            setStep(1);
+                                            onClose && onClose();
+                                        }}
+                                        className="text-gray-400 text-sm hover:text-gray-600 underline"
+                                    >
+                                        關閉視窗
+                                    </button>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* App Bottom Nav */}
+                    <div className="bg-white border-t border-gray-200 flex justify-around py-3 pb-5 absolute bottom-0 w-full">
+                        <i 
+                            className={`fa-solid fa-house text-xl ${
+                                step === 1 ? "text-brand-blue" : "text-gray-300"
+                            }`}
+                        ></i>
+                        <i className="fa-solid fa-calendar-check text-xl text-gray-300"></i>
+                        <div className="w-10 h-10 bg-brand-green rounded-full flex items-center justify-center -mt-6 border-4 border-white shadow-sm text-white">
+                            <i className="fa-solid fa-plus"></i>
+                        </div>
+                        <i className="fa-solid fa-comment-dots text-xl text-gray-300"></i>
+                        <i className="fa-solid fa-user text-xl text-gray-300"></i>
+                    </div>
+                </div>
+            );
+        }
+
+        function AppServiceBtn({ icon, color, label, onClick }) {
+            return (
+                <button
+                    onClick={onClick}
+                    className="bg-white p-4 rounded-xl shadow-sm text-center hover:bg-blue-50 border border-transparent hover:border-blue-200 transition flex flex-col items-center justify-center h-28"
+                >
+                    <i className={`fa-solid ${icon} text-3xl ${color} mb-2`}></i>
+                    <p className="text-sm font-bold text-gray-700">{label}</p>
+                </button>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById("root"));
+        root.render(<App />);
+    </script>
+</body>
+</html>
